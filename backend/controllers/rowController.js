@@ -52,17 +52,38 @@ exports.getRowByNumber = async (req, res) => {
   try {
     const { rowNumber } = req.params;
     const farm = await Farm.findOne({ block_name: "Blok 1" });
-    const row = farm.rows.find((row) => row.row_number === rowNumber);
 
-    if (!row) {
-      return res.status(404).json({ message: "Row not found" });
+    if (!farm) {
+      return res.status(404).send({ message: "Farm not found" });
     }
 
-    res.json(row);
+    const row = farm.rows.find((row) => row.row_number === parseInt(rowNumber));
+
+    if (!row) {
+      return res.status(404).send({ message: "Row not found" });
+    }
+
+    res.send(row);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).send({ message: "Server error", error });
   }
 };
+
+// exports.getRowByNumber = async (req, res) => {
+//   try {
+//     const { rowNumber } = req.params;
+//     const farm = await Farm.findOne({ block_name: "Blok 1" });
+//     const row = farm.rows.find((row) => row.row_number === rowNumber);
+
+//     if (!row) {
+//       return res.status(404).json({ message: "Row not found" });
+//     }
+
+//     res.json(row);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
 
 // Get all farm data
 exports.getAllFarmData = async (req, res) => {
