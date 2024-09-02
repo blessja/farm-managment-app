@@ -24,12 +24,14 @@ exports.checkInWorker = async (req, res) => {
 exports.checkOutWorker = async (req, res) => {
   try {
     const { workerName, rowNumber, stockCount } = req.body;
-    const farm = await Farm.findOne({ "rows.row_number": rowNumber });
 
+    // Find the farm document that contains the specific row
+    const farm = await Farm.findOne({ "rows.row_number": rowNumber });
     if (!farm) {
-      return res.status(404).send({ message: "Row not found" });
+      return res.status(404).send({ message: "Farm or Row not found" });
     }
 
+    // Find the specific row within the farm document
     const row = farm.rows.find(
       (row) => row.row_number === rowNumber && row.worker_name === workerName
     );
@@ -38,16 +40,34 @@ exports.checkOutWorker = async (req, res) => {
       return res.status(404).send({ message: "Row or worker not found" });
     }
 
-    const endTime = new Date();
-    const timeSpent = (endTime - row.start_time) / 1000 / 60; // Time in minutes
+    // Calculate the remaining stocks in the row
+    let remainingStocks;
+    if (stockCount !== undefined) {
+      remainingStocks = row.stock_count - stockCount;
+      if (remainingStocks < 0) {
+        return res
+          .status(400)
+          .send({ message: "Stock count exceeds available stocks" });
+      }
+    } else {
+      // If no stockCount is provided, assume the worker finished the row
+      remainingStocks = 0;
+    }
 
-    // Update stock count and clear worker data
-    row.stock_count -= stockCount; // Add the new stock count to the existing count
-    row.worker_name = "";
-    row.start_time = null;
+    // Update row details
+    row.stock_count = remainingStocks;
+    row.worker_name = ""; // Clear the worker name
+    row.start_time = null; // Clear the start time
 
+    // Save the farm document with updated row data
     await farm.save();
-    res.send({ message: "Check-out successful", timeSpent, row });
+
+    res.send({
+      message: "Check-out successful",
+      rowNumber: row.row_number,
+      remainingStocks,
+      timeSpent: (new Date() - row.start_time) / 1000 / 60, // Time in minutes
+    });
   } catch (error) {
     res.status(500).send({ message: "Server error", error });
   }
@@ -74,22 +94,6 @@ exports.getRowByNumber = async (req, res) => {
     res.status(500).send({ message: "Server error", error });
   }
 };
-
-// exports.getRowByNumber = async (req, res) => {
-//   try {
-//     const { rowNumber } = req.params;
-//     const farm = await Farm.findOne({ block_name: "Blok 1" });
-//     const row = farm.rows.find((row) => row.row_number === rowNumber);
-
-//     if (!row) {
-//       return res.status(404).json({ message: "Row not found" });
-//     }
-
-//     res.json(row);
-//   } catch (error) {
-//     res.status(500).json({ message: "Server error", error });
-//   }
-// };
 
 // Get all farm data
 exports.getAllFarmData = async (req, res) => {
