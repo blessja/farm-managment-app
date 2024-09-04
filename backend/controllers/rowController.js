@@ -77,7 +77,7 @@ exports.checkOutWorker = async (req, res) => {
 exports.getRowByNumber = async (req, res) => {
   try {
     const { rowNumber } = req.params;
-    const block = await Block.findOne({ block_name: "Blok 1" });
+    const block = await Block.findOne({ block_name: blockName });
 
     if (!block) {
       return res.status(404).send({ message: "Block not found" });
@@ -100,7 +100,7 @@ exports.getRowByNumber = async (req, res) => {
 // Get all block data
 exports.getAllBlockData = async (req, res) => {
   try {
-    const block = await Block.findOne({ block_name: "Blok 1" });
+    const block = await Block.findOne({ block_name: blockName });
 
     if (!block) {
       return res.status(404).json({ message: "Block data not found" });
@@ -114,7 +114,7 @@ exports.getAllBlockData = async (req, res) => {
 
 exports.getRemainingStocks = async (req, res) => {
   try {
-    const block = await Block.findOne({ block_name: "Blok 1" });
+    const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).send({ message: "Block not found" });
     }
