@@ -1,4 +1,5 @@
 const Farm = require("../models/Farm");
+const Row = require("../models/Row");
 
 // Check-in a worker
 exports.checkInWorker = async (req, res) => {
@@ -11,8 +12,11 @@ exports.checkInWorker = async (req, res) => {
       return res.status(404).json({ message: "Row not found" });
     }
 
+    // Set the time with the offset
+    const startTime = new Date(new Date().getTime() + 120 * 60 * 1000);
+
     row.worker_name = workerName;
-    row.start_time = new Date();
+    row.start_time = startTime;
     await farm.save();
     res.json({ message: "Check-in successful", row });
   } catch (error) {
@@ -25,13 +29,12 @@ exports.checkOutWorker = async (req, res) => {
   try {
     const { workerName, rowNumber, stockCount } = req.body;
 
-    // Find the farm document that contains the specific row
     const farm = await Farm.findOne({ "rows.row_number": rowNumber });
+
     if (!farm) {
-      return res.status(404).send({ message: "Farm or Row not found" });
+      return res.status(404).send({ message: "Row not found" });
     }
 
-    // Find the specific row within the farm document
     const row = farm.rows.find(
       (row) => row.row_number === rowNumber && row.worker_name === workerName
     );
@@ -40,33 +43,29 @@ exports.checkOutWorker = async (req, res) => {
       return res.status(404).send({ message: "Row or worker not found" });
     }
 
-    // Calculate the remaining stocks in the row
+    // Apply the offset for the end time
+    const endTime = new Date(new Date().getTime() + 120 * 60 * 1000);
+    const timeSpent = (endTime - row.start_time) / 1000 / 60; // Time in minutes
+
+    // Calculate remaining stocks dynamically without modifying the database
     let remainingStocks;
     if (stockCount !== undefined) {
-      remainingStocks = row.stock_count - stockCount;
-      if (remainingStocks < 0) {
-        return res
-          .status(400)
-          .send({ message: "Stock count exceeds available stocks" });
-      }
+      remainingStocks = row.stock_count - stockCount; // Calculate based on the worker's input
     } else {
-      // If no stockCount is provided, assume the worker finished the row
-      remainingStocks = 0;
+      remainingStocks = 0; // If the worker finished the row, all stocks are used
     }
 
-    // Update row details
-    row.stock_count = remainingStocks;
-    row.worker_name = ""; // Clear the worker name
-    row.start_time = null; // Clear the start time
+    // Reset worker details without modifying the original stock count
+    row.worker_name = "";
+    row.start_time = null;
 
-    // Save the farm document with updated row data
     await farm.save();
 
     res.send({
       message: "Check-out successful",
+      timeSpent,
       rowNumber: row.row_number,
       remainingStocks,
-      timeSpent: (new Date() - row.start_time) / 1000 / 60, // Time in minutes
     });
   } catch (error) {
     res.status(500).send({ message: "Server error", error });
