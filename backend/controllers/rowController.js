@@ -1,5 +1,5 @@
+const Worker = require("../models/Worker");
 const Block = require("../models/Block");
-const Row = require("../models/Row");
 
 // Check-in a worker
 exports.checkInWorker = async (req, res) => {
@@ -32,7 +32,6 @@ exports.checkOutWorker = async (req, res) => {
     const { workerName, rowNumber, blockName, stockCount } = req.body;
 
     const block = await Block.findOne({ block_name: blockName });
-
     if (!block) {
       return res.status(404).send({ message: "Block not found" });
     }
@@ -48,13 +47,39 @@ exports.checkOutWorker = async (req, res) => {
     const endTime = new Date();
     const timeSpent = (endTime - row.start_time) / 1000 / 60; // Time in minutes
 
-    // Calculate remaining stocks dynamically without modifying the database
-    let remainingStocks;
-    if (stockCount !== undefined) {
-      remainingStocks = row.stock_count - stockCount; // Calculate based on the worker's input
-    } else {
-      remainingStocks = 0; // If the worker finished the row, all stocks are used
+    // Handle the scenario where stockCount is not provided
+    let calculatedStockCount = stockCount;
+    if (typeof stockCount !== "number" || isNaN(stockCount)) {
+      calculatedStockCount = row.stock_count; // Assume the worker finished the entire row
+    } else if (stockCount > row.stock_count) {
+      return res
+        .status(400)
+        .send({ message: "Invalid stock count: exceeds available stocks" });
     }
+
+    // Update Worker collection
+    let worker = await Worker.findOne({ name: workerName });
+    if (!worker) {
+      worker = new Worker({ name: workerName });
+    }
+
+    let blockData = worker.blocks.find((b) => b.block_name === blockName);
+    if (!blockData) {
+      blockData = { block_name: blockName, rows: [] };
+      worker.blocks.push(blockData);
+    }
+
+    let rowData = blockData.rows.find((r) => r.row_number === rowNumber);
+    if (!rowData) {
+      rowData = { row_number: rowNumber, stock_count: calculatedStockCount };
+      blockData.rows.push(rowData);
+    } else {
+      rowData.stock_count += calculatedStockCount;
+    }
+
+    worker.total_stock_count += calculatedStockCount;
+
+    await worker.save();
 
     // Reset worker details without modifying the original stock count
     row.worker_name = "";
@@ -66,13 +91,12 @@ exports.checkOutWorker = async (req, res) => {
       message: "Check-out successful",
       timeSpent,
       rowNumber: row.row_number,
-      remainingStocks,
+      stockCount: calculatedStockCount,
     });
   } catch (error) {
     res.status(500).send({ message: "Server error", error });
   }
 };
-
 // Get row data by row number
 exports.getRowByNumber = async (req, res) => {
   try {
