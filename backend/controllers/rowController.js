@@ -5,27 +5,35 @@ const Block = require("../models/Block");
 exports.checkInWorker = async (req, res) => {
   const { workerName, rowNumber, blockName } = req.body;
   try {
+    // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
-
     if (!block) {
       return res.status(404).json({ message: "Block not found" });
     }
 
+    // Find the specific row in the block
     const row = block.rows.find((row) => row.row_number === rowNumber);
-
     if (!row) {
       return res.status(404).json({ message: "Row not found" });
     }
 
+    // Check if the row is already assigned to a worker
+    if (row.worker_name) {
+      return res.status(400).json({
+        message: `Row ${rowNumber} is already being worked on by ${row.worker_name}. The row must be checked out before another worker can check in.`,
+      });
+    }
+
+    // Assign the worker and set the start time
     row.worker_name = workerName;
     row.start_time = new Date();
     await block.save();
+
     res.json({ message: "Check-in successful", row });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 // Check-out a worker
 exports.checkOutWorker = async (req, res) => {
   try {
