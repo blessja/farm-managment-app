@@ -53,43 +53,48 @@ exports.checkOutWorker = async (req, res) => {
     }
 
     const endTime = new Date();
-    const timeSpent = (endTime - row.start_time) / 1000 / 60; // Time in minutes
+    const timeSpent = (endTime - row.start_time) / 1000 / 60;
 
-    // Handle the scenario where stockCount is not provided
     let calculatedStockCount = stockCount;
     if (typeof stockCount !== "number" || isNaN(stockCount)) {
-      calculatedStockCount = row.stock_count; // Assume the worker finished the entire row
+      calculatedStockCount = row.stock_count;
     } else if (stockCount > row.stock_count) {
       return res
         .status(400)
         .send({ message: "Invalid stock count: exceeds available stocks" });
     }
 
-    // Update Worker collection
-    let worker = await Worker.findOne({ name: workerName });
-    if (!worker) {
-      worker = new Worker({ name: workerName });
-    }
+    // Ensure the block exists in the worker's document
+    const worker = await Worker.findOneAndUpdate(
+      { name: workerName, "blocks.block_name": blockName },
+      {
+        $setOnInsert: {
+          name: workerName,
+          blocks: [{ block_name: blockName, rows: [] }],
+        },
+      },
+      { new: true, upsert: true }
+    );
 
-    let blockData = worker.blocks.find((b) => b.block_name === blockName);
-    if (!blockData) {
-      blockData = { block_name: blockName, rows: [] };
-      worker.blocks.push(blockData);
-    }
+    // Now update the specific row
+    const updatedWorker = await Worker.findOneAndUpdate(
+      {
+        name: workerName,
+        "blocks.block_name": blockName,
+      },
+      {
+        $inc: { total_stock_count: calculatedStockCount },
+        $push: {
+          "blocks.$.rows": {
+            row_number: rowNumber,
+            stock_count: calculatedStockCount,
+          },
+        },
+      },
+      { new: true }
+    );
 
-    let rowData = blockData.rows.find((r) => r.row_number === rowNumber);
-    if (!rowData) {
-      rowData = { row_number: rowNumber, stock_count: calculatedStockCount };
-      blockData.rows.push(rowData);
-    } else {
-      rowData.stock_count += calculatedStockCount;
-    }
-
-    worker.total_stock_count += calculatedStockCount;
-
-    await worker.save();
-
-    // Reset worker details without modifying the original stock count
+    // Clear the worker from the row in the Block collection
     row.worker_name = "";
     row.start_time = null;
 
@@ -102,9 +107,11 @@ exports.checkOutWorker = async (req, res) => {
       stockCount: calculatedStockCount,
     });
   } catch (error) {
+    console.error("Error during worker check-out:", error);
     res.status(500).send({ message: "Server error", error });
   }
 };
+
 // Get row data by row number
 exports.getRowByNumber = async (req, res) => {
   try {

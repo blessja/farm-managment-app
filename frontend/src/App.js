@@ -1,16 +1,20 @@
+// src/App.js
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import CheckInPage from "./pages/CheckInPage";
+import CheckOutPage from "./pages/CheckOutPage";
+
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>
-          Welcome to the Stock Management System!
-          <br />
-          Developed by: John Doe
-          <br />
-          Last updated: March 2023
-        </h1>
-      </header>
-    </div>
+    <Router>
+      <div>
+        <Routes>
+          <Route path="/checkin" element={<CheckInPage />} />
+          <Route path="/checkout" element={<CheckOutPage />} />
+          {/* You can add more routes here */}
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

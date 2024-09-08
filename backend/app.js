@@ -13,9 +13,13 @@ const port = 5000;
 connectDB();
 
 // Middleware
-app.use(cors());
+// app.use(cors());
 app.use(express.json());
 
+const corsOptions = {
+  origin: ["http://localhost:3000"],
+};
+app.use(cors(corsOptions));
 // Routes
 app.use("/api", rowRoutes);
 
