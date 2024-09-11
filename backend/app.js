@@ -18,6 +18,8 @@ app.use(express.json());
 
 const corsOptions = {
   origin: ["http://localhost:3000", "http://localhost:8100"],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
 };
 app.use(cors(corsOptions));
 // Routes

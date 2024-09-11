@@ -29,11 +29,13 @@ exports.checkInWorker = async (req, res) => {
     row.start_time = new Date();
     await block.save();
 
-    res.json({ message: "Check-in successful", row });
+    // Send a response after the block is saved
+    return res.json({ message: "Check-in successful", row });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
+
 // Check-out a worker
 exports.checkOutWorker = async (req, res) => {
   try {
