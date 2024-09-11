@@ -55,7 +55,7 @@ exports.checkOutWorker = async (req, res) => {
     }
 
     const endTime = new Date();
-    const timeSpent = (endTime - row.start_time) / 1000 / 60;
+    const timeSpent = (endTime - row.start_time) / 1000 / 60; // time in minutes
 
     let calculatedStockCount = stockCount;
     if (typeof stockCount !== "number" || isNaN(stockCount)) {
@@ -78,7 +78,7 @@ exports.checkOutWorker = async (req, res) => {
       { new: true, upsert: true }
     );
 
-    // Now update the specific row
+    // Now update the specific row in the Worker document
     const updatedWorker = await Worker.findOneAndUpdate(
       {
         name: workerName,
@@ -90,21 +90,23 @@ exports.checkOutWorker = async (req, res) => {
           "blocks.$.rows": {
             row_number: rowNumber,
             stock_count: calculatedStockCount,
+            time_spent: timeSpent, // Save time spent to worker document
           },
         },
       },
       { new: true }
     );
 
-    // Clear the worker from the row in the Block collection
+    // Save the time spent and clear worker from the row in the Block collection
     row.worker_name = "";
     row.start_time = null;
+    row.time_spent = timeSpent; // Save time spent in the Block document
 
     await block.save();
 
     res.send({
       message: "Check-out successful",
-      timeSpent,
+      timeSpent, // Return time spent in response
       rowNumber: row.row_number,
       stockCount: calculatedStockCount,
     });

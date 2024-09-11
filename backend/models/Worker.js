@@ -10,6 +10,7 @@ const workerSchema = new mongoose.Schema({
         {
           row_number: { type: Number },
           stock_count: { type: Number },
+          time_spent: { type: Number },
         },
       ],
     },
