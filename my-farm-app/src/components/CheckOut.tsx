@@ -45,22 +45,35 @@ const CheckOut: React.FC = () => {
   };
 
   const handleCheckOut = async () => {
-    if (!workerName || !blockName || rowNumber === null || stockCount === null) {
+    if (!workerName || !blockName || rowNumber === null) {
       alert('Please provide all required information.');
       return;
     }
+
+    // Prepare the body object, conditionally including stockCount if provided
+    const body = {
+      workerName,
+      blockName,
+      rowNumber,
+      ...(stockCount !== null && { stockCount }), // Only add stockCount if provided
+    };
 
     try {
       const response = await fetch('http://localhost:5000/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workerName, blockName, rowNumber, stockCount }),
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
         const data = await response.json();
         console.log('Check-out successful:', data);
         alert('Check-out successful!');
+        // Clear all form fields after successful check-out
+        setWorkerName('');
+        setBlockName('');
+        setRowNumber(null);
+        setStockCount(null);
       } else {
         const errorData = await response.json();
         console.error('Check-out failed:', errorData);
@@ -113,16 +126,19 @@ const CheckOut: React.FC = () => {
       </div>
 
       <div>
-        <label>Stock Count:</label>
+        <label>Stock Count (Optional):</label>
         <input
           type="number"
           value={stockCount || ''}
           onChange={(e) => setStockCount(Number(e.target.value))}
-          placeholder="Enter Stock Count"
+          placeholder="Enter Stock Count (Optional)"
         />
       </div>
 
-      <button onClick={handleCheckOut} disabled={!blockName || !rowNumber || stockCount === null}>
+      <button
+        onClick={handleCheckOut}
+        disabled={!blockName || !rowNumber} // Stock count is optional, no need to disable if empty
+      >
         Check Out
       </button>
     </div>

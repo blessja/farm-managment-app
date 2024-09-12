@@ -49,18 +49,23 @@ const CheckIn: React.FC = () => {
       alert('Please provide all required information.');
       return;
     }
-
+  
     try {
       const response = await fetch('http://localhost:5000/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workerName, blockName, rowNumber }),
       });
-
+  
       if (response.ok) {
         const data = await response.json();
         console.log('Check-in successful:', data);
         alert('Check-in successful!');
+  
+        // Clear the form values after successful check-in
+        setWorkerName('');
+        setBlockName('');
+        setRowNumber(null);
       } else {
         const errorData = await response.json();
         console.error('Check-in failed:', errorData);
@@ -71,6 +76,7 @@ const CheckIn: React.FC = () => {
       alert('An error occurred during check-in.');
     }
   };
+  
 
   return (
     <div id="container">
