@@ -9,7 +9,7 @@ const Home: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Blank</IonTitle>
+          <IonTitle>Glen Oak || Farm Management Activity v1.0</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
