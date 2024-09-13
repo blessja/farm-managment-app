@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import Header from './Header';
 
 const CheckOut: React.FC = () => {
   const [workerName, setWorkerName] = useState('');
@@ -86,7 +87,8 @@ const CheckOut: React.FC = () => {
   };
 
   return (
-    <div>
+    <div id="">
+        <Header/>
       <h2>Check Out</h2>
 
       {workerName ? (

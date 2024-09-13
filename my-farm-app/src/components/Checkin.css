@@ -22,3 +22,19 @@
 #container a {
   text-decoration: none;
 }
+
+.btn {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.main {
+  height: 100vh;
+}

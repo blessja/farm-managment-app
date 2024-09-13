@@ -1,24 +1,14 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
+// src/pages/Home.tsx
+import React from 'react';
+import { IonContent, IonPage } from '@ionic/react';
+import Header from '../components/Header'; // Import Header
 import ExploreContainer from '../components/ExploreContainer';
-import './Home.css';
-
-import { IonItem, IonLabel, IonButton } from '@ionic/react';
 
 const Home: React.FC = () => {
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Glen Oak || Farm Management Activity v1.0</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <Header /> {/* Use the shared Header */}
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Blank</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        
         <ExploreContainer />
       </IonContent>
     </IonPage>

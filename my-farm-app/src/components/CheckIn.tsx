@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import { IonButton, IonCard, IonContent, IonPage, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/react';
+import { Select, MenuItem, FormControl, InputLabel, Button } from '@mui/material';
+import { Watermark } from 'antd';
+import Header from './Header';
 import "./Checkin.css"
 
 const CheckIn: React.FC = () => {
@@ -79,47 +83,71 @@ const CheckIn: React.FC = () => {
   
 
   return (
-    <div id="container">
-      <h2>Check In</h2>
-
-      {workerName ? (
+    <IonPage>
+        <IonContent>
+        <Watermark content="">
+        <Header />
+        <IonCard style={{ marginTop: '20px' }}>
+        <IonCardHeader>
+        <IonCardTitle>Check In</IonCardTitle>
+        <IonCardSubtitle>  {workerName ? (
         <p>Worker Name: {workerName}</p>
       ) : (
-        <button onClick={startScan}>Scan Worker QR Code</button>
-      )}
+        <IonButton onClick={startScan}>Scan Worker QR Code</IonButton>
+      )}</IonCardSubtitle>
+      </IonCardHeader>
 
+      <IonCardContent>Here's a small text description for the card content. Nothing more, nothing less.</IonCardContent>
       {/* Block Dropdown */}
-      <div>
-        <label>Block Name:</label>
-        <select value={blockName} onChange={(e) => setBlockName(e.target.value)}>
-          <option value="">Select Block</option>
+      <FormControl  variant="outlined" style={{ marginBottom: '20px', width: "500px", marginLeft: "20px" }}>
+        <InputLabel id="block-label">Block Name</InputLabel>
+        <Select
+          labelId="block-label"
+          value={blockName}
+          onChange={(e) => setBlockName(e.target.value)}
+          label="Block Name"
+        >
+          <MenuItem value="">
+            <em>Select Block</em>
+          </MenuItem>
           {blocks.map((block) => (
-            <option key={block} value={block}>
+            <MenuItem key={block} value={block}>
               {block}
-            </option>
+            </MenuItem>
           ))}
-        </select>
-      </div>
+        </Select>
+      </FormControl>
 
       {/* Row Dropdown */}
-      <div>
-        <label>Row Number:</label>
-        <select
+      <FormControl  variant="outlined" disabled={!blockName} style={{ marginBottom: '20px', marginTop: '20px', width: "500px", marginLeft: "20px" }}>
+        <InputLabel id="row-label">Row Number</InputLabel>
+        <Select
+          labelId="row-label"
           value={rowNumber || ''}
           onChange={(e) => setRowNumber(Number(e.target.value))}
-          disabled={!blockName} // Disable dropdown until a block is selected
+          label="Row Number"
         >
-          <option value="">Select Row</option>
+          <MenuItem value="">
+            <em>Select Row</em>
+          </MenuItem>
           {rows.map((row) => (
-            <option key={row} value={row}>
+            <MenuItem key={row} value={row}>
               {row}
-            </option>
+            </MenuItem>
           ))}
-        </select>
-      </div>
-
-      <button onClick={handleCheckIn} disabled={!blockName || !rowNumber}>Check In</button>
+        </Select>
+      </FormControl>
+      <IonButton className='btn' onClick={handleCheckIn} disabled={!blockName || !rowNumber}>Check In</IonButton>
+        </IonCard>
+        <div id="main">
+      
+     
     </div>
+    </Watermark>
+        </IonContent>
+        
+    </IonPage>
+    
   );
 };
 
