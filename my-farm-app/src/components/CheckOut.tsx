@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BarcodeScanner } from "@capacitor-community/barcode-scanner";
 import Header from "./Header";
 import Footer from "./Footer";
+import { useHistory } from "react-router-dom";
 import {
   IonContent,
   IonPage,
@@ -104,7 +105,7 @@ const CheckOut: React.FC = () => {
       alert("An error occurred during check-out.");
     }
   };
-
+  const history = useHistory();
   return (
     <IonPage>
       <IonContent>
@@ -222,6 +223,14 @@ const CheckOut: React.FC = () => {
             Check Out
           </IonButton>
         </IonCard>
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mr: 2, mt: 2, ml: 2 }}
+          onClick={() => history.push("/home")}
+        >
+          Back
+        </Button>
       </IonContent>
       <Footer />
     </IonPage>

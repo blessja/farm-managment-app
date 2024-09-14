@@ -20,6 +20,7 @@ import {
 import { Watermark } from "antd";
 import Header from "./Header";
 import Footer from "./Footer";
+import { useHistory } from "react-router-dom";
 import "./Checkin.css";
 
 const CheckIn: React.FC = () => {
@@ -98,6 +99,7 @@ const CheckIn: React.FC = () => {
     }
   };
 
+  const history = useHistory();
   return (
     <IonPage>
       <IonContent>
@@ -194,7 +196,16 @@ const CheckIn: React.FC = () => {
           </IonCard>
           <div id="main"></div>
         </Watermark>
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mr: 2, mt: 2, ml: 2 }}
+          onClick={() => history.push("/home")}
+        >
+          Back
+        </Button>
       </IonContent>
+
       <Footer />
     </IonPage>
   );
