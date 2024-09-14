@@ -155,6 +155,21 @@ exports.getAllBlockData = async (req, res) => {
   }
 };
 
+// Get a block by name
+exports.getBlockByName = async (req, res) => {
+  try {
+    const block = await Block.findOne({ block_name: blockName });
+
+    if (!block) {
+      return res.status(404).send({ message: "Block not found" });
+    }
+
+    res.send(block);
+  } catch (error) {
+    res.status(500).send({ message: "Server error", error });
+  }
+};
+
 exports.getRemainingStocks = async (req, res) => {
   try {
     const block = await Block.findOne({ block_name: blockName });

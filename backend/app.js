@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "./.env" });
 const connectDB = require("./config/db");
 const rowRoutes = require("./routes/rowRoutes");
+const varietyRoutes = require("./routes/varietyRoutes");
+const blockRoutes = require("./routes/blockRoutes");
 
 const app = express();
 const port = 5000;
@@ -24,5 +26,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // Routes
 app.use("/api", rowRoutes);
+app.use("/api/variety", varietyRoutes);
+app.use("/api/block", blockRoutes);
 
 module.exports = app;

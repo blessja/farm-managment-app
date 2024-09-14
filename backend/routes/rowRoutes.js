@@ -17,6 +17,17 @@ router.get(
   rowController.getRemainingStocksForRow
 );
 
+// Get a block by name
+router.get("/block/:blockName", async (req, res) => {
+  try {
+    const block = await Block.findOne({ block_name: req.params.blockName });
+    if (!block) return res.status(404).json({ message: "Block not found" });
+    res.json(block);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch block", error });
+  }
+});
+
 // Get all blocks for dropdown
 router.get("/blocks", async (req, res) => {
   try {
