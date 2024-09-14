@@ -1,16 +1,20 @@
 // src/pages/Home.tsx
-import React from 'react';
-import { IonContent, IonPage } from '@ionic/react';
-import Header from '../components/Header'; // Import Header
-import ExploreContainer from '../components/ExploreContainer';
+import React from "react";
+import { IonContent, IonPage } from "@ionic/react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import ExploreContainer from "../components/ExploreContainer";
 
 const Home: React.FC = () => {
   return (
     <IonPage>
-      <Header /> {/* Use the shared Header */}
-      <IonContent fullscreen>
-        <ExploreContainer />
-      </IonContent>
+      <div>
+        <IonContent fullscreen>
+          <Header />
+          <ExploreContainer />
+          <Footer />
+        </IonContent>
+      </div>
     </IonPage>
   );
 };

@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { Watermark } from "antd";
 import Header from "./Header";
+import Footer from "./Footer";
 import "./Checkin.css";
 
 const CheckIn: React.FC = () => {
@@ -194,6 +195,7 @@ const CheckIn: React.FC = () => {
           <div id="main"></div>
         </Watermark>
       </IonContent>
+      <Footer />
     </IonPage>
   );
 };
