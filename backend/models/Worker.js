@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const workerSchema = new mongoose.Schema({
+  workerID: { type: String, required: true }, // Ensure this field is included and required
   name: { type: String, required: true },
   total_stock_count: { type: Number, default: 0 },
   blocks: [

@@ -3,7 +3,8 @@ const Block = require("../models/Block");
 
 // Check-in a worker
 exports.checkInWorker = async (req, res) => {
-  const { workerName, rowNumber, blockName } = req.body;
+  const { workerID, workerName, rowNumber, blockName } = req.body;
+
   try {
     // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
@@ -26,8 +27,21 @@ exports.checkInWorker = async (req, res) => {
 
     // Assign the worker and set the start time
     row.worker_name = workerName;
-    row.start_time = new Date();
+    row.worker_id = workerID; // Store workerID for reference
+    row.start_time = new Date(); // Use current UTC time
+
     await block.save();
+
+    // Optionally, save the worker to the Worker collection if not already existing
+    const workerExists = await Worker.findOne({ workerID: workerID });
+    if (!workerExists) {
+      const newWorker = new Worker({
+        workerID: workerID,
+        name: workerName,
+        blocks: [],
+      });
+      await newWorker.save();
+    }
 
     // Send a response after the block is saved
     return res.json({ message: "Check-in successful", row });
@@ -38,24 +52,25 @@ exports.checkInWorker = async (req, res) => {
 
 // Check-out a worker
 exports.checkOutWorker = async (req, res) => {
-  try {
-    const { workerName, rowNumber, blockName, stockCount } = req.body;
+  const { workerID, workerName, rowNumber, blockName, stockCount } = req.body;
 
+  try {
+    // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).send({ message: "Block not found" });
     }
 
+    // Find the specific row in the block
     const row = block.rows.find(
       (row) => row.row_number === rowNumber && row.worker_name === workerName
     );
-
     if (!row) {
       return res.status(404).send({ message: "Row or worker not found" });
     }
 
     const endTime = new Date();
-    const timeSpent = (endTime - row.start_time) / 1000 / 60; // time in minutes
+    const timeSpentInMinutes = (endTime - row.start_time) / 1000 / 60; // time in minutes
 
     let calculatedStockCount = stockCount;
     if (typeof stockCount !== "number" || isNaN(stockCount)) {
@@ -66,47 +81,72 @@ exports.checkOutWorker = async (req, res) => {
         .send({ message: "Invalid stock count: exceeds available stocks" });
     }
 
-    // Ensure the block exists in the worker's document
-    const worker = await Worker.findOneAndUpdate(
-      { name: workerName, "blocks.block_name": blockName },
-      {
-        $setOnInsert: {
-          name: workerName,
-          blocks: [{ block_name: blockName, rows: [] }],
-        },
-      },
-      { new: true, upsert: true }
-    );
+    // Convert minutes to hours and minutes
+    const hours = Math.floor(timeSpentInMinutes / 60);
+    const minutes = Math.round(timeSpentInMinutes % 60);
+    const formattedTimeSpent = `${hours}hr ${minutes}min`;
 
-    // Now update the specific row in the Worker document
-    const updatedWorker = await Worker.findOneAndUpdate(
-      {
+    // Update or create the worker
+    let worker = await Worker.findOne({ workerID: workerID });
+    if (!worker) {
+      // Create new worker if it does not exist
+      worker = new Worker({
+        workerID: workerID,
         name: workerName,
-        "blocks.block_name": blockName,
-      },
-      {
-        $inc: { total_stock_count: calculatedStockCount },
-        $push: {
-          "blocks.$.rows": {
+        blocks: [{ block_name: blockName, rows: [] }],
+      });
+    }
+
+    // Update the worker's block and rows
+    const blockIndex = worker.blocks.findIndex(
+      (b) => b.block_name === blockName
+    );
+    if (blockIndex === -1) {
+      // Add block if it does not exist
+      worker.blocks.push({
+        block_name: blockName,
+        rows: [
+          {
             row_number: rowNumber,
             stock_count: calculatedStockCount,
-            time_spent: timeSpent, // Save time spent to worker document
+            time_spent: timeSpentInMinutes,
           },
-        },
-      },
-      { new: true }
-    );
+        ],
+      });
+    } else {
+      // Update existing block
+      const rowIndex = worker.blocks[blockIndex].rows.findIndex(
+        (r) => r.row_number === rowNumber
+      );
+      if (rowIndex === -1) {
+        // Add new row if it does not exist
+        worker.blocks[blockIndex].rows.push({
+          row_number: rowNumber,
+          stock_count: calculatedStockCount,
+          time_spent: timeSpentInMinutes,
+        });
+      } else {
+        // Update existing row
+        worker.blocks[blockIndex].rows[rowIndex] = {
+          row_number: rowNumber,
+          stock_count: calculatedStockCount,
+          time_spent: timeSpentInMinutes,
+        };
+      }
+    }
+    // Increment total stock count
+    worker.total_stock_count += calculatedStockCount;
+    await worker.save();
 
-    // Save the time spent and clear worker from the row in the Block collection
+    // Clear worker from the row in the Block collection
     row.worker_name = "";
     row.start_time = null;
-    row.time_spent = timeSpent; // Save time spent in the Block document
-
+    row.time_spent = timeSpentInMinutes;
     await block.save();
 
     res.send({
       message: "Check-out successful",
-      timeSpent, // Return time spent in response
+      timeSpent: formattedTimeSpent,
       rowNumber: row.row_number,
       stockCount: calculatedStockCount,
     });
