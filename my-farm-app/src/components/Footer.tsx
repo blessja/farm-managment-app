@@ -19,14 +19,10 @@ const Footer: React.FC = () => {
         &copy; {new Date().getFullYear()} My Farm App. All rights reserved.
       </Typography>
       <Box mt={1}>
-        <Link
-          href="https://example.com/privacy-policy"
-          color="inherit"
-          sx={{ marginRight: 2 }}
-        >
+        <Link href="#" color="inherit" sx={{ marginRight: 2 }}>
           Privacy Policy
         </Link>
-        <Link href="https://example.com/terms" color="inherit">
+        <Link href="#" color="inherit">
           Terms of Service
         </Link>
       </Box>

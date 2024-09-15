@@ -8,7 +8,7 @@ const workerSchema = new mongoose.Schema({
       block_name: { type: String },
       rows: [
         {
-          row_number: { type: Number },
+          row_number: { type: String },
           stock_count: { type: Number },
           time_spent: { type: Number },
         },

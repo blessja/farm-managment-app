@@ -25,10 +25,10 @@ import {
 const CheckOut: React.FC = () => {
   const [workerName, setWorkerName] = useState("");
   const [blockName, setBlockName] = useState("");
-  const [rowNumber, setRowNumber] = useState<number | null>(null);
+  const [rowNumber, setRowNumber] = useState<string | null>(null);
   const [stockCount, setStockCount] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<string[]>([]); // Array to store block names
-  const [rows, setRows] = useState<number[]>([]); // Array to store row numbers
+  const [rows, setRows] = useState<string[]>([]); // Array to store row numbers
 
   // Fetch block names when component mounts
   useEffect(() => {
@@ -177,7 +177,7 @@ const CheckOut: React.FC = () => {
             <Select
               labelId="row-label"
               value={rowNumber || ""}
-              onChange={(e) => setRowNumber(Number(e.target.value))}
+              onChange={(e) => setRowNumber(e.target.value)}
               label="Row Number"
             >
               <MenuItem value="">
