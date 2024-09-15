@@ -12,6 +12,8 @@ import {
   IonCardSubtitle,
   IonCardTitle,
   IonButton,
+  IonAlert,
+  IonToast,
 } from "@ionic/react";
 import {
   Select,
@@ -30,13 +32,14 @@ const CheckOut: React.FC = () => {
   const [stockCount, setStockCount] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<string[]>([]);
   const [rows, setRows] = useState<string[]>([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
-    console.log("Fetching blocks...");
     fetch("http://localhost:5000/api/blocks")
       .then((response) => response.json())
       .then((data) => {
-        console.log("Blocks fetched:", data);
         setBlocks(data);
       })
       .catch((error) => console.error("Error fetching blocks:", error));
@@ -44,11 +47,9 @@ const CheckOut: React.FC = () => {
 
   useEffect(() => {
     if (blockName) {
-      console.log(`Fetching rows for block: ${blockName}`);
       fetch(`http://localhost:5000/api/block/${blockName}/rows`)
         .then((response) => response.json())
         .then((data) => {
-          console.log(`Rows fetched for block:`, data);
           setRows(data);
         })
         .catch((error) => console.error("Error fetching rows:", error));
@@ -68,6 +69,8 @@ const CheckOut: React.FC = () => {
         setWorkerName(scannedData.workerName);
       }
     } catch (error) {
+      setAlertMessage("Invalid QR code content. Please try again.");
+      setShowAlert(true);
       console.error("Error scanning QR code:", error);
     } finally {
       await BarcodeScanner.showBackground();
@@ -83,8 +86,8 @@ const CheckOut: React.FC = () => {
     });
 
     if (!workerId || !blockName || rowNumber === null) {
-      console.warn("Incomplete check-out information.");
-      alert("Please provide all required information.");
+      setAlertMessage("Please provide all required information.");
+      setShowAlert(true);
       return;
     }
 
@@ -105,8 +108,7 @@ const CheckOut: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Check-out successful:", data);
-        alert("Check-out successful!");
-
+        setShowToast(true);
         setWorkerId("");
         setWorkerName("");
         setBlockName("");
@@ -114,12 +116,12 @@ const CheckOut: React.FC = () => {
         setStockCount(null);
       } else {
         const errorData = await response.json();
-        console.error("Check-out failed:", errorData);
-        alert(`Check-out failed: ${errorData.message}`);
+        setAlertMessage(`Check-out failed: ${errorData.message}`);
+        setShowAlert(true);
       }
     } catch (error) {
-      console.error("Error during check-out:", error);
-      alert("An error occurred during check-out.");
+      setAlertMessage("An error occurred during check-out.");
+      setShowAlert(true);
     }
   };
 
@@ -256,6 +258,21 @@ const CheckOut: React.FC = () => {
         >
           Back
         </Button>
+        <IonAlert
+          isOpen={showAlert}
+          onDidDismiss={() => setShowAlert(false)}
+          header={"Alert"}
+          message={alertMessage}
+          buttons={["OK"]}
+        />
+
+        {/* IonToast for Success Messages */}
+        <IonToast
+          isOpen={showToast}
+          onDidDismiss={() => setShowToast(false)}
+          message="Check-out successful!"
+          duration={2000}
+        />
         <Footer />
       </IonContent>
     </IonPage>

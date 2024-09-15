@@ -9,6 +9,8 @@ import {
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
+  IonAlert,
+  IonToast,
 } from "@ionic/react";
 import {
   Select,
@@ -25,11 +27,14 @@ import "./Checkin.css";
 
 const CheckIn: React.FC = () => {
   const [workerName, setWorkerName] = useState("");
-  const [workerID, setWorkerID] = useState(""); // New state for worker ID
+  const [workerID, setWorkerID] = useState("");
   const [blockName, setBlockName] = useState("");
   const [rowNumber, setRowNumber] = useState<string | null>(null);
-  const [blocks, setBlocks] = useState<string[]>([]); // Array to store block names
-  const [rows, setRows] = useState<string[]>([]); // Array to store row numbers
+  const [blocks, setBlocks] = useState<string[]>([]);
+  const [rows, setRows] = useState<string[]>([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
 
   // Fetch block names when component mounts
   useEffect(() => {
@@ -51,11 +56,10 @@ const CheckIn: React.FC = () => {
 
   const startScan = async () => {
     try {
-      console.log("Starting QR code scan...");
       await BarcodeScanner.checkPermission({ force: true });
-      console.log("Permission granted. Hiding background...");
+
       await BarcodeScanner.hideBackground();
-      console.log("Starting the scan...");
+
       const result = await BarcodeScanner.startScan();
 
       if (result.hasContent) {
@@ -70,25 +74,27 @@ const CheckIn: React.FC = () => {
           setWorkerID(workerData.workerID);
           console.log("Worker data parsed and set:", workerData);
         } catch (parseError) {
-          console.error("Error parsing QR code content:", parseError);
-          alert("Invalid QR code content. Please try again.");
+          setAlertMessage("Invalid QR code content. Please try again.");
+          setShowAlert(true);
         }
       } else {
-        console.log("No content found in the QR code.");
-        alert("No QR code content found. Please try again.");
+        setAlertMessage("No QR code content found. Please try again.");
+        setShowAlert(true);
       }
     } catch (error) {
-      console.error("Error scanning QR code:", error);
-      alert("An error occurred while scanning the QR code. Please try again.");
+      setAlertMessage(
+        "An error occurred while scanning the QR code. Please try again."
+      );
+      setShowAlert(true);
     } finally {
-      console.log("Showing background again...");
       await BarcodeScanner.showBackground(); // Show the background again after scanning
     }
   };
 
   const handleCheckIn = async () => {
     if (!workerID || !workerName || !blockName || rowNumber === null) {
-      alert("Please provide all required information.");
+      setAlertMessage("Please provide all required information.");
+      setShowAlert(true);
       return;
     }
 
@@ -102,21 +108,19 @@ const CheckIn: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Check-in successful:", data);
-        alert("Check-in successful!");
-
-        // Clear the form values after successful check-in
+        setShowToast(true);
         setWorkerName("");
-        setWorkerID(""); // Clear worker ID
+        setWorkerID("");
         setBlockName("");
         setRowNumber(null);
       } else {
         const errorData = await response.json();
-        console.error("Check-in failed:", errorData);
-        alert(`Check-in failed: ${errorData.message}`);
+        setAlertMessage(`Check-in failed: ${errorData.message}`);
+        setShowAlert(true);
       }
     } catch (error) {
-      console.error("Error during check-in:", error);
-      alert("An error occurred during check-in.");
+      setAlertMessage("An error occurred during check-in.");
+      setShowAlert(true);
     }
   };
 
@@ -225,7 +229,22 @@ const CheckIn: React.FC = () => {
           Back
         </Button>
       </IonContent>
+      {/* IonAlert for Error Messages */}
+      <IonAlert
+        isOpen={showAlert}
+        onDidDismiss={() => setShowAlert(false)}
+        header={"Alert"}
+        message={alertMessage}
+        buttons={["OK"]}
+      />
 
+      {/* IonToast for Success Messages */}
+      <IonToast
+        isOpen={showToast}
+        onDidDismiss={() => setShowToast(false)}
+        message="Check-in successful!"
+        duration={2000}
+      />
       <Footer />
     </IonPage>
   );
