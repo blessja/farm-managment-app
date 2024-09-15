@@ -23,30 +23,37 @@ import {
 } from "@mui/material";
 
 const CheckOut: React.FC = () => {
+  const [workerId, setWorkerId] = useState("");
   const [workerName, setWorkerName] = useState("");
   const [blockName, setBlockName] = useState("");
   const [rowNumber, setRowNumber] = useState<string | null>(null);
   const [stockCount, setStockCount] = useState<number | null>(null);
-  const [blocks, setBlocks] = useState<string[]>([]); // Array to store block names
-  const [rows, setRows] = useState<string[]>([]); // Array to store row numbers
+  const [blocks, setBlocks] = useState<string[]>([]);
+  const [rows, setRows] = useState<string[]>([]);
 
-  // Fetch block names when component mounts
   useEffect(() => {
+    console.log("Fetching blocks...");
     fetch("http://localhost:5000/api/blocks")
       .then((response) => response.json())
-      .then((data) => setBlocks(data))
+      .then((data) => {
+        console.log("Blocks fetched:", data);
+        setBlocks(data);
+      })
       .catch((error) => console.error("Error fetching blocks:", error));
   }, []);
 
-  // Fetch rows for the selected block
   useEffect(() => {
     if (blockName) {
+      console.log(`Fetching rows for block: ${blockName}`);
       fetch(`http://localhost:5000/api/block/${blockName}/rows`)
         .then((response) => response.json())
-        .then((data) => setRows(data))
+        .then((data) => {
+          console.log(`Rows fetched for block:`, data);
+          setRows(data);
+        })
         .catch((error) => console.error("Error fetching rows:", error));
     }
-  }, [blockName]); // Refetch rows when blockName changes
+  }, [blockName]);
 
   const startScan = async () => {
     try {
@@ -56,41 +63,51 @@ const CheckOut: React.FC = () => {
 
       if (result.hasContent) {
         console.log("QR Code Content:", result.content);
-        setWorkerName(result.content); // Set the worker's name from QR code
+        const scannedData = JSON.parse(result.content);
+        setWorkerId(scannedData.workerID); // Use the correct key
+        setWorkerName(scannedData.workerName);
       }
     } catch (error) {
       console.error("Error scanning QR code:", error);
     } finally {
-      await BarcodeScanner.showBackground(); // Show the background again after scanning
+      await BarcodeScanner.showBackground();
     }
   };
 
   const handleCheckOut = async () => {
-    if (!workerName || !blockName || rowNumber === null) {
+    console.log("Handling checkout...");
+    console.log("Checking for checkout data:", {
+      workerId,
+      blockName,
+      rowNumber,
+    });
+
+    if (!workerId || !blockName || rowNumber === null) {
+      console.warn("Incomplete check-out information.");
       alert("Please provide all required information.");
       return;
     }
 
-    // Prepare the body object, conditionally including stockCount if provided
-    const body = {
-      workerName,
-      blockName,
-      rowNumber,
-      ...(stockCount !== null && { stockCount }), // Only add stockCount if provided
-    };
-
     try {
+      console.log("Sending checkout request with data:", {
+        workerId,
+        blockName,
+        rowNumber,
+        stockCount,
+      });
+
       const response = await fetch("http://localhost:5000/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ workerId, blockName, rowNumber, stockCount }),
       });
 
       if (response.ok) {
         const data = await response.json();
         console.log("Check-out successful:", data);
         alert("Check-out successful!");
-        // Clear all form fields after successful check-out
+
+        setWorkerId("");
         setWorkerName("");
         setBlockName("");
         setRowNumber(null);
@@ -105,6 +122,7 @@ const CheckOut: React.FC = () => {
       alert("An error occurred during check-out.");
     }
   };
+
   const history = useHistory();
   return (
     <IonPage>
@@ -114,7 +132,6 @@ const CheckOut: React.FC = () => {
           <IonCardHeader>
             <IonCardTitle>Check Out</IonCardTitle>
             <IonCardSubtitle>
-              {" "}
               {workerName ? (
                 <p>Worker Name: {workerName}</p>
               ) : (
@@ -126,7 +143,7 @@ const CheckOut: React.FC = () => {
           <IonCardContent>
             <p>Please select the block number and row number</p>
           </IonCardContent>
-          {/* Block Dropdown */}
+
           <FormControl
             variant="outlined"
             style={{ width: "100%", padding: "10px 20px" }}
@@ -144,7 +161,10 @@ const CheckOut: React.FC = () => {
             <Select
               labelId="block-label"
               value={blockName}
-              onChange={(e) => setBlockName(e.target.value)}
+              onChange={(e) => {
+                setBlockName(e.target.value);
+                console.log("Block selected:", e.target.value);
+              }}
               label="Block Name"
             >
               <MenuItem value="">
@@ -158,7 +178,6 @@ const CheckOut: React.FC = () => {
             </Select>
           </FormControl>
 
-          {/* Row Dropdown */}
           <FormControl
             variant="outlined"
             disabled={!blockName}
@@ -177,7 +196,10 @@ const CheckOut: React.FC = () => {
             <Select
               labelId="row-label"
               value={rowNumber || ""}
-              onChange={(e) => setRowNumber(e.target.value)}
+              onChange={(e) => {
+                setRowNumber(e.target.value);
+                console.log("Row selected:", e.target.value);
+              }}
               label="Row Number"
             >
               <MenuItem value="">
@@ -193,7 +215,6 @@ const CheckOut: React.FC = () => {
 
           <FormControl
             variant="outlined"
-            disabled={!blockName}
             style={{ width: "100%", marginTop: "20px", padding: "10px 20px" }}
           >
             <InputLabel
@@ -208,17 +229,21 @@ const CheckOut: React.FC = () => {
             </InputLabel>
             <Input
               id="stock-count"
-              type="number"
               value={stockCount || ""}
-              onChange={(e) => setStockCount(Number(e.target.value))}
-              placeholder="Enter Stock Count (Optional)"
+              onChange={(e) => {
+                const value = e.target.value ? parseInt(e.target.value) : null;
+                setStockCount(value);
+                console.log("Stock count entered:", value);
+              }}
+              type="number"
+              placeholder="Enter stock count"
             />
           </FormControl>
 
           <IonButton
             className="btn"
             onClick={handleCheckOut}
-            disabled={!blockName || !rowNumber} // Stock count is optional, no need to disable if empty
+            disabled={!blockName || !rowNumber}
           >
             Check Out
           </IonButton>
@@ -231,8 +256,8 @@ const CheckOut: React.FC = () => {
         >
           Back
         </Button>
+        <Footer />
       </IonContent>
-      <Footer />
     </IonPage>
   );
 };

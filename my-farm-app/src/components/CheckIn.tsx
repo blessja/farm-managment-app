@@ -25,8 +25,8 @@ import "./Checkin.css";
 
 const CheckIn: React.FC = () => {
   const [workerName, setWorkerName] = useState("");
+  const [workerID, setWorkerID] = useState(""); // New state for worker ID
   const [blockName, setBlockName] = useState("");
-
   const [rowNumber, setRowNumber] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<string[]>([]); // Array to store block names
   const [rows, setRows] = useState<string[]>([]); // Array to store row numbers
@@ -51,23 +51,43 @@ const CheckIn: React.FC = () => {
 
   const startScan = async () => {
     try {
+      console.log("Starting QR code scan...");
       await BarcodeScanner.checkPermission({ force: true });
+      console.log("Permission granted. Hiding background...");
       await BarcodeScanner.hideBackground();
+      console.log("Starting the scan...");
       const result = await BarcodeScanner.startScan();
 
       if (result.hasContent) {
         console.log("QR Code Content:", result.content);
-        setWorkerName(result.content); // Set the worker's name from QR code
+
+        try {
+          // Parse the QR code content as JSON
+          const workerData = JSON.parse(result.content);
+
+          // Set the worker's name and ID from the QR code
+          setWorkerName(workerData.workerName);
+          setWorkerID(workerData.workerID);
+          console.log("Worker data parsed and set:", workerData);
+        } catch (parseError) {
+          console.error("Error parsing QR code content:", parseError);
+          alert("Invalid QR code content. Please try again.");
+        }
+      } else {
+        console.log("No content found in the QR code.");
+        alert("No QR code content found. Please try again.");
       }
     } catch (error) {
       console.error("Error scanning QR code:", error);
+      alert("An error occurred while scanning the QR code. Please try again.");
     } finally {
+      console.log("Showing background again...");
       await BarcodeScanner.showBackground(); // Show the background again after scanning
     }
   };
 
   const handleCheckIn = async () => {
-    if (!workerName || !blockName || rowNumber === null) {
+    if (!workerID || !workerName || !blockName || rowNumber === null) {
       alert("Please provide all required information.");
       return;
     }
@@ -76,7 +96,7 @@ const CheckIn: React.FC = () => {
       const response = await fetch("http://localhost:5000/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workerName, blockName, rowNumber }),
+        body: JSON.stringify({ workerID, workerName, blockName, rowNumber }),
       });
 
       if (response.ok) {
@@ -86,6 +106,7 @@ const CheckIn: React.FC = () => {
 
         // Clear the form values after successful check-in
         setWorkerName("");
+        setWorkerID(""); // Clear worker ID
         setBlockName("");
         setRowNumber(null);
       } else {
@@ -109,7 +130,6 @@ const CheckIn: React.FC = () => {
             <IonCardHeader>
               <IonCardTitle>Check In</IonCardTitle>
               <IonCardSubtitle>
-                {" "}
                 {workerName ? (
                   <p>Worker Name: {workerName}</p>
                 ) : (
