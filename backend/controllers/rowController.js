@@ -286,3 +286,13 @@ exports.getRemainingStocksForRow = async (req, res) => {
     res.status(500).send({ message: "Server error", error });
   }
 };
+
+// get workers
+exports.getWorkers = async (req, res) => {
+  try {
+    const workers = await Worker.find({});
+    res.send(workers);
+  } catch (error) {
+    res.status(500).send({ message: "Server error", error });
+  }
+};

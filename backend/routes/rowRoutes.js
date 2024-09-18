@@ -17,6 +17,9 @@ router.get(
   rowController.getRemainingStocksForRow
 );
 
+// get workers
+router.get("/workers", rowController.getWorkers);
+
 // Get a block by name
 router.get("/block/:blockName", async (req, res) => {
   try {
