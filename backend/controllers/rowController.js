@@ -51,6 +51,7 @@ exports.checkInWorker = async (req, res) => {
 };
 
 // Check-out a worker
+// Check-out a worker
 exports.checkOutWorker = async (req, res) => {
   const { workerID, workerName, rowNumber, blockName, stockCount } = req.body;
 
@@ -101,6 +102,8 @@ exports.checkOutWorker = async (req, res) => {
     const blockIndex = worker.blocks.findIndex(
       (b) => b.block_name === blockName
     );
+    const currentDate = new Date(); // Capture the current date
+
     if (blockIndex === -1) {
       // Add block if it does not exist
       worker.blocks.push({
@@ -110,6 +113,10 @@ exports.checkOutWorker = async (req, res) => {
             row_number: rowNumber,
             stock_count: calculatedStockCount,
             time_spent: timeSpentInMinutes,
+            date: currentDate, // Add the current date to the row
+            day_of_week: new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+            }), // Add the day of the week
           },
         ],
       });
@@ -124,6 +131,10 @@ exports.checkOutWorker = async (req, res) => {
           row_number: rowNumber,
           stock_count: calculatedStockCount,
           time_spent: timeSpentInMinutes,
+          date: currentDate, // Add the current date to the row
+          day_of_week: new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+          }), // Add the day of the week
         });
       } else {
         // Update existing row
@@ -131,17 +142,23 @@ exports.checkOutWorker = async (req, res) => {
           row_number: rowNumber,
           stock_count: calculatedStockCount,
           time_spent: timeSpentInMinutes,
+          date: currentDate, // Add the current date to the row
+          day_of_week: new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+          }), // Add the day of the week
         };
       }
     }
+
     // Increment total stock count
     worker.total_stock_count += calculatedStockCount;
     await worker.save();
 
     // Clear worker from the row in the Block collection
     row.worker_name = "";
+    row.worker_id = "";
     row.start_time = null;
-    row.time_spent = timeSpentInMinutes;
+    row.time_spent = null;
     await block.save();
 
     res.send({
