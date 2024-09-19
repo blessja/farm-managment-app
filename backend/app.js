@@ -19,7 +19,11 @@ connectDB();
 app.use(express.json());
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://localhost:8100"],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:8100",
+    "http://192.168.0.103:8101",
+  ],
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
 };

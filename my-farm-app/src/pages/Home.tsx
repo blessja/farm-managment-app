@@ -7,15 +7,15 @@ import ExploreContainer from "../components/ExploreContainer";
 
 const Home: React.FC = () => {
   return (
-    <IonPage>
-      <div>
-        <IonContent fullscreen>
+    <>
+      <IonPage>
+        <IonContent>
           <Header />
           <ExploreContainer />
           <Footer />
         </IonContent>
-      </div>
-    </IonPage>
+      </IonPage>
+    </>
   );
 };
 

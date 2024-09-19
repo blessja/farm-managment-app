@@ -1,13 +1,14 @@
 import { useHistory } from "react-router-dom";
 import "./ExploreContainer.css";
 import { Box, Typography, Button } from "@mui/material";
+import { IonButton } from "@ionic/react";
 
 interface ContainerProps {}
 
 const ExploreContainer: React.FC<ContainerProps> = () => {
   const history = useHistory();
   return (
-    <div id="container">
+    <div style={{ textAlign: "center" }}>
       <Box
         position="relative"
         display="flex"
@@ -71,6 +72,16 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
       </div>
       <div style={{ marginBottom: "40px" }}>
         <h1>My Farm App</h1>
+
+        <IonButton
+          style={{ marginTop: "30px" }}
+          onClick={() => history.push("/dashboard")}
+          color="primary"
+          fill="solid"
+          size="large"
+        >
+          Go to Dashboard
+        </IonButton>
       </div>
     </div>
   );
