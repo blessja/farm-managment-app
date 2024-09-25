@@ -3,6 +3,7 @@ import React from "react";
 import { IonContent, IonPage } from "@ionic/react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import QRScanner from "../components/QRScanner";
 import ExploreContainer from "../components/ExploreContainer";
 
 const Home: React.FC = () => {

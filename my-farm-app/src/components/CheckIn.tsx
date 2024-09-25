@@ -1,5 +1,5 @@
+// CheckIn.tsx
 import React, { useState, useEffect } from "react";
-import { BarcodeScanner } from "@capacitor-community/barcode-scanner";
 import {
   IonButton,
   IonCard,
@@ -24,6 +24,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import { useHistory } from "react-router-dom";
 import "./Checkin.css";
+import QRScanner from "./QRScanner";
 
 const CheckIn: React.FC = () => {
   const [workerName, setWorkerName] = useState("");
@@ -36,59 +37,46 @@ const CheckIn: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
 
+  const history = useHistory();
+
   // Fetch block names when component mounts
+  // Fetch block names with error handling
   useEffect(() => {
-    fetch("http://localhost:5000/api/blocks")
-      .then((response) => response.json())
+    fetch("https://fa66-165-73-160-143.ngrok-free.app/api/blocks")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then((data) => setBlocks(data))
-      .catch((error) => console.error("Error fetching blocks:", error));
+      .catch((error) => {
+        console.error("Error fetching blocks:", error);
+        setAlertMessage(`Error fetching blocks: ${error.message}`);
+        setShowAlert(true);
+      });
   }, []);
 
   // Fetch rows for the selected block
   useEffect(() => {
     if (blockName) {
-      fetch(`http://localhost:5000/api/block/${blockName}/rows`)
+      fetch(
+        `https://fa66-165-73-160-143.ngrok-free.app/api/block/${blockName}/rows`
+      )
         .then((response) => response.json())
         .then((data) => setRows(data))
         .catch((error) => console.error("Error fetching rows:", error));
     }
-  }, [blockName]); // Refetch rows when blockName changes
+  }, [blockName]);
 
-  const startScan = async () => {
-    try {
-      await BarcodeScanner.checkPermission({ force: true });
-
-      await BarcodeScanner.hideBackground();
-
-      const result = await BarcodeScanner.startScan();
-
-      if (result.hasContent) {
-        console.log("QR Code Content:", result.content);
-
-        try {
-          // Parse the QR code content as JSON
-          const workerData = JSON.parse(result.content);
-
-          // Set the worker's name and ID from the QR code
-          setWorkerName(workerData.workerName);
-          setWorkerID(workerData.workerID);
-          console.log("Worker data parsed and set:", workerData);
-        } catch (parseError) {
-          setAlertMessage("Invalid QR code content. Please try again.");
-          setShowAlert(true);
-        }
-      } else {
-        setAlertMessage("No QR code content found. Please try again.");
-        setShowAlert(true);
-      }
-    } catch (error) {
-      setAlertMessage(
-        "An error occurred while scanning the QR code. Please try again."
-      );
-      setShowAlert(true);
-    } finally {
-      await BarcodeScanner.showBackground(); // Show the background again after scanning
-    }
+  // Function to handle successful scan
+  const handleScanSuccess = (workerData: {
+    workerName: string;
+    workerID: string;
+  }) => {
+    setWorkerName(workerData.workerName);
+    setWorkerID(workerData.workerID);
+    console.log("Worker data parsed and set:", workerData);
   };
 
   const handleCheckIn = async () => {
@@ -99,11 +87,14 @@ const CheckIn: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/checkin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workerID, workerName, blockName, rowNumber }),
-      });
+      const response = await fetch(
+        "https://fa66-165-73-160-143.ngrok-free.app/api/checkin",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workerID, workerName, blockName, rowNumber }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -124,7 +115,6 @@ const CheckIn: React.FC = () => {
     }
   };
 
-  const history = useHistory();
   return (
     <IonPage>
       <IonContent>
@@ -137,7 +127,7 @@ const CheckIn: React.FC = () => {
                 {workerName ? (
                   <p>Worker Name: {workerName}</p>
                 ) : (
-                  <IonButton onClick={startScan}>Scan Worker QR Code</IonButton>
+                  <QRScanner onScanSuccess={handleScanSuccess} />
                 )}
               </IonCardSubtitle>
             </IonCardHeader>
@@ -210,6 +200,7 @@ const CheckIn: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
+
             <IonButton
               className="btn"
               onClick={handleCheckIn}

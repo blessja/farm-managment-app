@@ -47,7 +47,9 @@ const CheckOut: React.FC = () => {
 
   useEffect(() => {
     if (blockName) {
-      fetch(`http://localhost:5000/api/block/${blockName}/rows`)
+      fetch(
+        `https://fa66-165-73-160-143.ngrok-free.app/api/block/${blockName}/rows`
+      )
         .then((response) => response.json())
         .then((data) => {
           setRows(data);
@@ -99,11 +101,14 @@ const CheckOut: React.FC = () => {
         stockCount,
       });
 
-      const response = await fetch("http://localhost:5000/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workerId, blockName, rowNumber, stockCount }),
-      });
+      const response = await fetch(
+        "https://fa66-165-73-160-143.ngrok-free.app/api/checkout",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workerId, blockName, rowNumber, stockCount }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
