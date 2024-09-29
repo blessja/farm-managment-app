@@ -25,6 +25,8 @@ const corsOptions = {
     "http://localhost:5173",
     "http://localhost:8101",
     "http://192.168.0.103:8101",
+    "capacitor://localhost",
+    "ionic://localhost",
   ],
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
