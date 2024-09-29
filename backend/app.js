@@ -22,6 +22,9 @@ const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:8100",
+    "capacitor://localhost",
+    "https://localhost",
+    "ionic://localhost",
     "http://localhost:5173",
     "http://localhost:8101",
     "http://192.168.0.21:8135",
