@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">my-farm-app</string>
-    <string name="title_activity_main">my-farm-app</string>
-    <string name="package_name">com.myfarm.app</string>
-    <string name="custom_url_scheme">com.myfarm.app</string>
-</resources>
