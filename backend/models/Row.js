@@ -9,7 +9,13 @@ const rowSchema = new mongoose.Schema({
   remaining_stock_count: Number, // number of stocks remaining
   bunches: { type: Number, default: 0 },
   start_time: { type: Date, default: null },
-  stocks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Stock" }], // array of stock ids
+  daily_stock_entries: [
+    {
+      date: { type: Date },
+      stock_count: { type: Number },
+      time_spent: { type: Number },
+    },
+  ], // store stock count entries for the row
 });
 
 const Row = mongoose.model("Row", rowSchema);
