@@ -62,13 +62,11 @@ exports.checkOutWorker = async (req, res) => {
   const { workerID, workerName, rowNumber, blockName, stockCount } = req.body;
 
   try {
-    // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).send({ message: "Block not found" });
     }
 
-    // Find the specific row in the block
     const row = block.rows.find(
       (row) => row.row_number === rowNumber && row.worker_name === workerName
     );
@@ -79,16 +77,16 @@ exports.checkOutWorker = async (req, res) => {
     const endTime = new Date();
     const timeSpentInMinutes = (endTime - row.start_time) / 1000 / 60; // time in minutes
 
-    // If no stockCount is provided, assume the worker has worked all remaining stocks
     let calculatedStockCount;
     if (typeof stockCount !== "number" || isNaN(stockCount)) {
-      // Set stock count to all remaining stocks
       calculatedStockCount = row.remaining_stock_count || row.stock_count;
     } else {
       calculatedStockCount = stockCount;
     }
 
-    // Update remaining stocks based on the current checkout
+    console.log("Stock count being checked out:", calculatedStockCount);
+    console.log("Remaining stocks before checkout:", row.remaining_stock_count);
+
     const remainingStocks = row.remaining_stock_count
       ? row.remaining_stock_count - calculatedStockCount
       : row.stock_count - calculatedStockCount;
@@ -99,19 +97,6 @@ exports.checkOutWorker = async (req, res) => {
         .send({ message: "Stock count cannot be negative" });
     }
 
-    // Initialize daily_stock_entries array if it doesn't exist
-    if (!row.daily_stock_entries) {
-      row.daily_stock_entries = [];
-    }
-
-    // Log daily stock entry (for history purposes)
-    row.daily_stock_entries.push({
-      stock_count: calculatedStockCount,
-      time_spent: timeSpentInMinutes,
-      date: endTime, // Save the date
-    });
-
-    // Update the remaining stock count in the row
     row.remaining_stock_count = remainingStocks;
 
     // Clear worker from the row in the Block collection
@@ -122,7 +107,6 @@ exports.checkOutWorker = async (req, res) => {
 
     await block.save();
 
-    // Fetch or create worker record
     let worker = await Worker.findOne({ workerID });
     if (!worker) {
       worker = new Worker({
@@ -133,21 +117,17 @@ exports.checkOutWorker = async (req, res) => {
       });
     }
 
-    // Update worker's total stock count
     worker.total_stock_count += calculatedStockCount;
 
-    // Check if the worker has the block
     let workerBlock = worker.blocks.find((b) => b.block_name === blockName);
     if (!workerBlock) {
       workerBlock = {
         block_name: blockName,
         rows: [],
-        daily_stock_entries: [],
       };
       worker.blocks.push(workerBlock);
     }
 
-    // Find the row in the worker's block
     let workerRow = workerBlock.rows.find((r) => r.row_number === rowNumber);
     if (!workerRow) {
       workerRow = {
@@ -162,22 +142,14 @@ exports.checkOutWorker = async (req, res) => {
       workerBlock.rows.push(workerRow);
     }
 
-    // Update stock count for the worker's row
+    console.log(
+      "Stock count before updating worker's row:",
+      workerRow.stock_count
+    );
     workerRow.stock_count += calculatedStockCount;
-    workerRow.time_spent += timeSpentInMinutes;
-
-    // Update daily stock entries for the worker
-    workerBlock.daily_stock_entries.push({
-      date: new Date().toISOString().split("T")[0], // Store date in "YYYY-MM-DD" format
-      row_number: rowNumber,
-      block_name: blockName,
-      stock_count: calculatedStockCount,
-      time_spent: timeSpentInMinutes,
-    });
 
     await worker.save();
 
-    // Send response with remaining stock count
     return res.send({
       message: "Check-out successful",
       timeSpent: `${Math.floor(timeSpentInMinutes / 60)}hr ${Math.round(
