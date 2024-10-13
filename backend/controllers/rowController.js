@@ -6,17 +6,22 @@ exports.checkInWorker = async (req, res) => {
   const { workerID, workerName, rowNumber, blockName } = req.body;
 
   try {
+    // Log the request data
+    console.log("Check-in request:", req.body);
+
     // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).json({ message: "Block not found" });
     }
+    console.log("Found block:", block);
 
     // Find the specific row in the block
     const row = block.rows.find((row) => row.row_number === rowNumber);
     if (!row) {
       return res.status(404).json({ message: "Row not found" });
     }
+    console.log("Found row before assignment:", row);
 
     // Check if the row is already assigned to a worker
     if (row.worker_name) {
@@ -32,6 +37,8 @@ exports.checkInWorker = async (req, res) => {
     row.worker_name = workerName;
     row.worker_id = workerID;
     row.start_time = new Date(); // Use current UTC time
+
+    console.log("Row after assignment:", row);
 
     await block.save();
 
@@ -53,6 +60,7 @@ exports.checkInWorker = async (req, res) => {
       remainingStocks,
     });
   } catch (error) {
+    console.error("Error during check-in:", error);
     return res.status(500).json({ message: error.message });
   }
 };
