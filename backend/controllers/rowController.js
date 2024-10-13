@@ -6,39 +6,32 @@ exports.checkInWorker = async (req, res) => {
   const { workerID, workerName, rowNumber, blockName } = req.body;
 
   try {
-    // Log the request data
     console.log("Check-in request:", req.body);
 
-    // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).json({ message: "Block not found" });
     }
-    console.log("Found block:", block);
 
-    // Find the specific row in the block
     const row = block.rows.find((row) => row.row_number === rowNumber);
     if (!row) {
       return res.status(404).json({ message: "Row not found" });
     }
-    console.log("Found row before assignment:", row);
 
-    // Check if the row is already assigned to a worker
     if (row.worker_name) {
-      return res.status(400).json({
-        message: `Row ${rowNumber} is already being worked on by ${row.worker_name}. The row must be checked out before another worker can check in.`,
+      // The row is already assigned to another worker, return the remaining stock count
+      return res.json({
+        message: `Row ${rowNumber} is currently being worked on by ${row.worker_name}.`,
+        remainingStocks: row.remaining_stock_count,
       });
     }
 
     // Initialize remaining stock count based on the previous session
     let remainingStocks = row.remaining_stock_count || row.stock_count;
 
-    // Assign the worker and set the start time
     row.worker_name = workerName;
     row.worker_id = workerID;
     row.start_time = new Date(); // Use current UTC time
-
-    console.log("Row after assignment:", row);
 
     await block.save();
 
@@ -53,7 +46,6 @@ exports.checkInWorker = async (req, res) => {
       await newWorker.save();
     }
 
-    // Send a response after the block is saved
     return res.json({
       message: "Check-in successful",
       rowNumber: row.row_number,
@@ -66,17 +58,16 @@ exports.checkInWorker = async (req, res) => {
 };
 
 // Check-out a worker
+// Check-out a worker
 exports.checkOutWorker = async (req, res) => {
   const { workerID, workerName, rowNumber, blockName, stockCount } = req.body;
 
   try {
-    // Find the block with the given block name
     const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).send({ message: "Block not found" });
     }
 
-    // Find the specific row in the block
     const row = block.rows.find(
       (row) => row.row_number === rowNumber && row.worker_name === workerName
     );
@@ -87,35 +78,53 @@ exports.checkOutWorker = async (req, res) => {
     const endTime = new Date();
     const timeSpentInMinutes = (endTime - row.start_time) / 1000 / 60; // time in minutes
 
-    let calculatedStockCount = stockCount;
-    if (typeof stockCount !== "number" || isNaN(stockCount)) {
-      calculatedStockCount = row.stock_count;
-    } else if (stockCount > row.stock_count) {
-      return res
-        .status(400)
-        .send({ message: "Invalid stock count: exceeds available stocks" });
+    let calculatedStockCount;
+
+    // If stockCount is not provided, assume the worker has worked on all remaining stocks
+    if (typeof stockCount === "undefined" || stockCount === null) {
+      calculatedStockCount = row.remaining_stock_count || row.stock_count;
+    } else {
+      // If stockCount is provided, validate it
+      calculatedStockCount = stockCount;
+
+      // Ensure stockCount does not exceed the available remaining stocks
+      if (
+        calculatedStockCount > (row.remaining_stock_count || row.stock_count)
+      ) {
+        return res
+          .status(400)
+          .send({ message: "Invalid stock count: exceeds available stocks" });
+      }
     }
 
-    // Convert minutes to hours and minutes
-    const hours = Math.floor(timeSpentInMinutes / 60);
-    const minutes = Math.round(timeSpentInMinutes % 60);
-    const formattedTimeSpent = `${hours}hr ${minutes}min`;
+    // Update the remaining stock count
+    row.remaining_stock_count =
+      (row.remaining_stock_count || row.stock_count) - calculatedStockCount;
 
-    // Update or create the worker
+    // Clear worker from the row in the Block collection
+    row.worker_name = "";
+    row.worker_id = "";
+    row.start_time = null;
+    row.time_spent = null;
+
+    await block.save();
+
+    // Update or create the worker's record
     let worker = await Worker.findOne({ workerID: workerID });
     if (!worker) {
       // Create new worker if it does not exist
       worker = new Worker({
         workerID: workerID,
         name: workerName,
-        blocks: [{ block_name: blockName, rows: [] }],
+        blocks: [],
       });
     }
 
-    // Update the worker's block and rows
+    // Find or add the block for the worker
     const blockIndex = worker.blocks.findIndex(
       (b) => b.block_name === blockName
     );
+
     const currentDate = new Date(); // Capture the current date
 
     if (blockIndex === -1) {
@@ -152,15 +161,15 @@ exports.checkOutWorker = async (req, res) => {
         });
       } else {
         // Update existing row
-        worker.blocks[blockIndex].rows[rowIndex] = {
-          row_number: rowNumber,
-          stock_count: calculatedStockCount,
-          time_spent: timeSpentInMinutes,
-          date: currentDate, // Add the current date to the row
-          day_of_week: new Date().toLocaleDateString("en-US", {
+        worker.blocks[blockIndex].rows[rowIndex].stock_count +=
+          calculatedStockCount;
+        worker.blocks[blockIndex].rows[rowIndex].time_spent +=
+          timeSpentInMinutes;
+        worker.blocks[blockIndex].rows[rowIndex].date = currentDate; // Update the date
+        worker.blocks[blockIndex].rows[rowIndex].day_of_week =
+          new Date().toLocaleDateString("en-US", {
             weekday: "long",
-          }), // Add the day of the week
-        };
+          });
       }
     }
 
@@ -168,18 +177,13 @@ exports.checkOutWorker = async (req, res) => {
     worker.total_stock_count += calculatedStockCount;
     await worker.save();
 
-    // Clear worker from the row in the Block collection
-    row.worker_name = "";
-    row.worker_id = "";
-    row.start_time = null;
-    row.time_spent = null;
-    await block.save();
-
     res.send({
       message: "Check-out successful",
-      timeSpent: formattedTimeSpent,
+      timeSpent: `${Math.floor(timeSpentInMinutes / 60)}hr ${Math.round(
+        timeSpentInMinutes % 60
+      )}min`,
       rowNumber: row.row_number,
-      stockCount: calculatedStockCount,
+      remainingStocks: row.remaining_stock_count,
     });
   } catch (error) {
     console.error("Error during worker check-out:", error);
