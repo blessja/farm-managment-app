@@ -2,6 +2,7 @@ const Worker = require("../models/Worker");
 const Block = require("../models/Block");
 
 // Check-in a worker
+// Check-in a worker
 exports.checkInWorker = async (req, res) => {
   const { workerID, workerName, rowNumber, blockName } = req.body;
 
@@ -19,8 +20,8 @@ exports.checkInWorker = async (req, res) => {
     }
 
     if (row.worker_name) {
-      // The row is already assigned to another worker, return the remaining stock count
-      return res.json({
+      // The row is already assigned to another worker, return an error
+      return res.status(409).json({
         message: `Row ${rowNumber} is currently being worked on by ${row.worker_name}.`,
         remainingStocks: row.remaining_stock_count,
       });
