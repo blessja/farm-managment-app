@@ -23,6 +23,7 @@ app.use(express.json());
 const corsOptions = {
   origin: [
     "http://localhost:3000",
+    "http://localhost:4000",
     "http://localhost:8100",
     "capacitor://localhost",
     "https://localhost",
