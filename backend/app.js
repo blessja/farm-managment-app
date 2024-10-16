@@ -9,6 +9,7 @@ const varietyRoutes = require("./routes/varietyRoutes");
 const blockRoutes = require("./routes/blockRoutes");
 const bunchRoutes = require("./routes/bunchRoutes");
 const workerRoutes = require("./routes/workerRoutes");
+const clockRoutes = require("./routes/clockRoutes");
 
 const app = express();
 const port = 5000;
@@ -41,9 +42,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // Routes
 app.use("/api", rowRoutes);
+app.use("/api", clockRoutes);
 app.use("/api/variety", varietyRoutes);
 app.use("/api/block", blockRoutes);
 app.use("/api/stocks", bunchRoutes);
 app.use("/api/workers", workerRoutes);
+app.use("/api/clock", clockRoutes);
 
 module.exports = app;
