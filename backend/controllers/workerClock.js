@@ -1,6 +1,5 @@
 const WorkerClock = require("../models/WorkerClock");
 
-// Add a new clock-in entry for a worker// Add a new clock-in entry for a worker
 // Add a new clock-in entry for a worker
 exports.addClockIn = async (req, res) => {
   const { workerID, workerName } = req.body;
@@ -27,6 +26,17 @@ exports.addClockIn = async (req, res) => {
       });
     }
 
+    // Check if the worker has an active clock-in session
+    const activeSession = worker.clockIns.find(
+      (session) => !session.clockOutTime
+    );
+
+    if (activeSession) {
+      return res.status(400).json({
+        message: `Worker ${workerName} is already clocked in. Please clock out first.`,
+      });
+    }
+
     // Add the new clock-in session
     worker.clockIns.push({
       clockInTime: new Date(),
@@ -41,7 +51,6 @@ exports.addClockIn = async (req, res) => {
   }
 };
 
-// Clock-out a worker
 // Clock-out a worker
 exports.addClockOut = async (req, res) => {
   const { workerID } = req.body;

@@ -231,6 +231,8 @@ exports.getCurrentCheckin = async (req, res) => {
   }
 };
 
+// get all current checkins
+
 // Get row data by row number
 exports.getRowByNumber = async (req, res) => {
   try {
