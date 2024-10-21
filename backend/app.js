@@ -48,5 +48,6 @@ app.use("/api/block", blockRoutes);
 app.use("/api/stocks", bunchRoutes);
 app.use("/api/workers", workerRoutes);
 app.use("/api/clock", clockRoutes);
+app.use("/api/monitor-clockins", clockRoutes);
 
 module.exports = app;
