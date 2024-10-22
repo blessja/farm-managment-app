@@ -49,5 +49,6 @@ app.use("/api/stocks", bunchRoutes);
 app.use("/api/workers", workerRoutes);
 app.use("/api/clock", clockRoutes);
 app.use("/api/monitor-clockins", clockRoutes);
+app.use("/api/clocks", clockRoutes);
 
 module.exports = app;

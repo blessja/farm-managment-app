@@ -14,13 +14,12 @@ exports.addClockIn = async (req, res) => {
         workerName,
         clockIns: [],
         workedHoursPerDay: {
-          Monday: 0,
-          Tuesday: 0,
           Wednesday: 0,
           Thursday: 0,
           Friday: 0,
           Saturday: 0,
-          Sunday: 0,
+          Monday: 0,
+          Tuesday: 0,
         },
         totalWorkedHours: 0,
       });
@@ -53,10 +52,10 @@ exports.addClockIn = async (req, res) => {
 
 // Clock-out a worker
 exports.addClockOut = async (req, res) => {
-  const { workerID } = req.body;
+  const { workerID, workerName } = req.body;
 
   try {
-    const worker = await WorkerClock.findOne({ workerID });
+    const worker = await WorkerClock.findOne({ workerID, workerName });
 
     if (!worker) {
       return res.status(404).json({ message: "Worker not found" });
@@ -67,7 +66,9 @@ exports.addClockOut = async (req, res) => {
     );
 
     if (!currentSession) {
-      return res.status(400).json({ message: "Worker is not clocked in." });
+      return res
+        .status(400)
+        .json({ message: `Worker ${workerName} is not clocked in.` });
     }
 
     // Set clock-out time and calculate duration
@@ -102,4 +103,12 @@ exports.addClockOut = async (req, res) => {
   }
 };
 
-// get the current time for the current worker instance
+// get all the clock data of the workers
+exports.getAllClockData = async (req, res) => {
+  try {
+    const workers = await WorkerClock.find({});
+    res.json(workers);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
