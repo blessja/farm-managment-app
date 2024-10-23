@@ -55,12 +55,14 @@ exports.addClockOut = async (req, res) => {
   const { workerID, workerName } = req.body;
 
   try {
+    // Find the worker by workerID and workerName
     const worker = await WorkerClock.findOne({ workerID, workerName });
 
     if (!worker) {
       return res.status(404).json({ message: "Worker not found" });
     }
 
+    // Find the current active clock-in session without a clock-out time
     const currentSession = worker.clockIns.find(
       (session) => !session.clockOutTime
     );
@@ -71,32 +73,43 @@ exports.addClockOut = async (req, res) => {
         .json({ message: `Worker ${workerName} is not clocked in.` });
     }
 
-    // Set clock-out time and calculate duration
+    // Set the clock-out time to the current time
     currentSession.clockOutTime = new Date();
-    const duration =
+
+    // Calculate the total duration in hours
+    let duration =
       (new Date(currentSession.clockOutTime) -
         new Date(currentSession.clockInTime)) /
       1000 /
       60 /
       60; // Convert milliseconds to hours
+
+    // Deduct 1 hour if the duration is greater than 4 hours (lunch break)
+    if (duration > 4) {
+      duration -= 1;
+    }
+
+    // Update the duration field in the session
     currentSession.duration = duration;
 
-    // Get the day of the week
+    // Get the day of the week from the clock-in session
     const clockInDay = currentSession.day;
 
     // Update the hours worked on that specific day
     worker.workedHoursPerDay[clockInDay] += duration;
 
-    // Add to total worked hours
+    // Add the duration to the total worked hours
     worker.totalWorkedHours += duration;
 
+    // Save the worker record
     await worker.save();
+
     res.json({
       message: `Worker ${
         worker.workerName
       } clocked out successfully. Worked ${duration.toFixed(
         2
-      )} hours on ${clockInDay}.`,
+      )} hours (including 1-hour lunch deduction) on ${clockInDay}.`,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
