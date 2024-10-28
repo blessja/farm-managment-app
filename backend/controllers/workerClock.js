@@ -73,12 +73,28 @@ exports.addClockOut = async (req, res) => {
 
     // Set clock-out time and calculate duration
     currentSession.clockOutTime = new Date();
-    const duration =
-      (new Date(currentSession.clockOutTime) -
-        new Date(currentSession.clockInTime)) /
-      1000 /
-      60 /
-      60; // Convert milliseconds to hours
+    const clockInTime = new Date(currentSession.clockInTime);
+    const clockOutTime = new Date(currentSession.clockOutTime);
+
+    // Define lunch break window
+    const lunchStartTime = new Date(clockInTime);
+    lunchStartTime.setHours(12, 0, 0); // 12:00 PM
+
+    const lunchEndTime = new Date(clockInTime);
+    lunchEndTime.setHours(13, 0, 0); // 1:00 PM
+
+    // Calculate the duration in hours
+    let duration = (clockOutTime - clockInTime) / (1000 * 60 * 60); // Convert milliseconds to hours
+
+    // Deduct 1 hour if working time overlaps with the lunch period and duration is 5 hours or more
+    if (
+      duration >= 5 &&
+      clockInTime < lunchEndTime &&
+      clockOutTime > lunchStartTime
+    ) {
+      duration -= 1;
+    }
+
     currentSession.duration = duration;
 
     // Get the day of the week
@@ -103,7 +119,7 @@ exports.addClockOut = async (req, res) => {
   }
 };
 
-// get all the clock data of the workers
+// Get all the clock data of the workers
 exports.getAllClockData = async (req, res) => {
   try {
     const workers = await WorkerClock.find({});
