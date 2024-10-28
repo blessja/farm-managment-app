@@ -51,6 +51,7 @@ exports.addClockIn = async (req, res) => {
 };
 
 // Clock-out a worker
+// Clock-out a worker
 exports.addClockOut = async (req, res) => {
   const { workerID, workerName } = req.body;
 
@@ -78,21 +79,25 @@ exports.addClockOut = async (req, res) => {
 
     // Define lunch break window
     const lunchStartTime = new Date(clockInTime);
-    lunchStartTime.setHours(12, 0, 0); // 12:00 PM
+    lunchStartTime.setHours(17, 0, 0); // 12:00 PM
 
     const lunchEndTime = new Date(clockInTime);
-    lunchEndTime.setHours(13, 0, 0); // 1:00 PM
+    lunchEndTime.setHours(18, 0, 0); // 1:00 PM
 
-    // Calculate the duration in hours
+    // Calculate initial duration in hours
     let duration = (clockOutTime - clockInTime) / (1000 * 60 * 60); // Convert milliseconds to hours
 
-    // Deduct 1 hour if working time overlaps with the lunch period and duration is 5 hours or more
-    if (
-      duration >= 5 &&
-      clockInTime < lunchEndTime &&
-      clockOutTime > lunchStartTime
-    ) {
-      duration -= 1;
+    // Deduct 1 hour if working time overlaps with the lunch period (12:00 PM to 1:00 PM)
+    if (clockInTime < lunchEndTime && clockOutTime > lunchStartTime) {
+      // Calculate the overlap with the lunch break period
+      const overlapStart =
+        clockInTime < lunchStartTime ? lunchStartTime : clockInTime;
+      const overlapEnd =
+        clockOutTime > lunchEndTime ? lunchEndTime : clockOutTime;
+
+      const lunchOverlapDuration =
+        (overlapEnd - overlapStart) / (1000 * 60 * 60); // Convert to hours
+      duration -= lunchOverlapDuration;
     }
 
     currentSession.duration = duration;
