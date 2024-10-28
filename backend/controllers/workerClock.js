@@ -46,17 +46,17 @@ exports.addClockIn = async (req, res) => {
 
     res.status(201).json({ message: "Clock-in entry added successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("Clock-in Error:", error); // Log the error for debugging
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 // Clock-out a worker
-// Clock-out a worker
 exports.addClockOut = async (req, res) => {
-  const { workerID, workerName } = req.body;
+  const { workerID } = req.body; // Removed workerName for consistency in search
 
   try {
-    const worker = await WorkerClock.findOne({ workerID, workerName });
+    const worker = await WorkerClock.findOne({ workerID });
 
     if (!worker) {
       return res.status(404).json({ message: "Worker not found" });
@@ -67,9 +67,7 @@ exports.addClockOut = async (req, res) => {
     );
 
     if (!currentSession) {
-      return res
-        .status(400)
-        .json({ message: `Worker ${workerName} is not clocked in.` });
+      return res.status(400).json({ message: `Worker is not clocked in.` });
     }
 
     // Set clock-out time and calculate duration
@@ -79,10 +77,10 @@ exports.addClockOut = async (req, res) => {
 
     // Define lunch break window
     const lunchStartTime = new Date(clockInTime);
-    lunchStartTime.setHours(17, 0, 0); // 12:00 PM
+    lunchStartTime.setHours(12, 0, 0); // 12:00 PM
 
     const lunchEndTime = new Date(clockInTime);
-    lunchEndTime.setHours(18, 0, 0); // 1:00 PM
+    lunchEndTime.setHours(13, 0, 0); // 1:00 PM
 
     // Calculate initial duration in hours
     let duration = (clockOutTime - clockInTime) / (1000 * 60 * 60); // Convert milliseconds to hours
@@ -113,14 +111,13 @@ exports.addClockOut = async (req, res) => {
 
     await worker.save();
     res.json({
-      message: `Worker ${
-        worker.workerName
-      } clocked out successfully. Worked ${duration.toFixed(
+      message: `Worker clocked out successfully. Worked ${duration.toFixed(
         2
       )} hours on ${clockInDay}.`,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("Clock-out Error:", error); // Log the error for debugging
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -130,6 +127,7 @@ exports.getAllClockData = async (req, res) => {
     const workers = await WorkerClock.find({});
     res.json(workers);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("Get Clock Data Error:", error); // Log the error for debugging
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
