@@ -14,6 +14,7 @@ const workerSchema = new mongoose.Schema({
           time_spent: { type: Number },
           date: { type: Date }, // New field to track the date
           day_of_week: { type: String }, // New field to track the day of the week
+          job_type: { type: String },
         },
       ],
     },

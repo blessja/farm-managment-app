@@ -4,23 +4,30 @@ const Block = require("../models/Block");
 // Check-in a worker
 // Check-in a worker
 exports.checkInWorker = async (req, res) => {
-  const { workerID, workerName, rowNumber, blockName } = req.body;
+  const { workerID, workerName, rowNumber, blockName, jobType } = req.body;
 
   try {
-    console.log("Check-in request:", req.body);
+    console.log("Check-in request body:", req.body);
 
+    // Check for jobType in the request
+    if (!jobType) {
+      return res.status(400).json({ message: "Job type is required" });
+    }
+
+    // Check if the block exists
     const block = await Block.findOne({ block_name: blockName });
     if (!block) {
       return res.status(404).json({ message: "Block not found" });
     }
 
+    // Find the row in the block by row number
     const row = block.rows.find((row) => row.row_number === rowNumber);
     if (!row) {
       return res.status(404).json({ message: "Row not found" });
     }
 
+    // Check if the row is already assigned to another worker
     if (row.worker_name) {
-      // The row is already assigned to another worker, return an error
       return res.status(409).json({
         message: `Row ${rowNumber} is currently being worked on by ${row.worker_name}.`,
         remainingStocks: row.remaining_stock_count,
@@ -30,27 +37,69 @@ exports.checkInWorker = async (req, res) => {
     // Initialize remaining stock count based on the previous session
     let remainingStocks = row.remaining_stock_count || row.stock_count;
 
+    // Assign values to the row fields
     row.worker_name = workerName;
     row.worker_id = workerID;
-    row.start_time = new Date(); // Use current UTC time
+    row.start_time = new Date(); // Record the current UTC time
+    row.job_type = jobType; // Assign job type to the row
 
+    console.log("Assigned job_type:", row.job_type); // Log to confirm assignment
+
+    // Save the updated block with the new worker assignment
     await block.save();
 
-    // Optionally, save the worker to the Worker collection if not already existing
+    // Check if the worker exists in the Worker collection
     const workerExists = await Worker.findOne({ workerID: workerID });
     if (!workerExists) {
+      // Create a new worker if not found in the collection
       const newWorker = new Worker({
         workerID: workerID,
         name: workerName,
-        blocks: [],
+        blocks: [
+          {
+            block_name: blockName,
+            rows: [
+              {
+                row_number: rowNumber,
+                job_type: jobType, // Save job_type on check-in for the worker's record
+              },
+            ],
+          },
+        ],
       });
       await newWorker.save();
+    } else {
+      // If worker exists, update their record with the new row data
+      const block = workerExists.blocks.find((b) => b.block_name === blockName);
+      if (!block) {
+        workerExists.blocks.push({
+          block_name: blockName,
+          rows: [
+            {
+              row_number: rowNumber,
+              job_type: jobType, // Save job_type on check-in for the worker's record
+            },
+          ],
+        });
+      } else {
+        const row = block.rows.find((r) => r.row_number === rowNumber);
+        if (!row) {
+          block.rows.push({
+            row_number: rowNumber,
+            job_type: jobType, // Save job_type on check-in for the worker's record
+          });
+        } else {
+          row.job_type = jobType; // Update job_type if row exists
+        }
+      }
+      await workerExists.save();
     }
 
     return res.json({
       message: "Check-in successful",
       rowNumber: row.row_number,
       remainingStocks,
+      jobType: row.job_type,
     });
   } catch (error) {
     console.error("Error during check-in:", error);
