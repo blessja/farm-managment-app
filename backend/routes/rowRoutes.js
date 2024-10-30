@@ -17,10 +17,7 @@ router.get(
   rowController.getRemainingStocksForRow
 );
 
-router.get(
-  "/worker/:workerID/current-checkin",
-  rowController.getCurrentCheckin
-);
+router.get("/workers/current-checkins", rowController.getCurrentCheckins);
 
 // get workers
 router.get("/workers", rowController.getWorkers);
