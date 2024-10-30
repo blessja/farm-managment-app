@@ -18,6 +18,10 @@ router.get(
 );
 
 router.get("/workers/current-checkins", rowController.getCurrentCheckins);
+router.get(
+  "/worker/:workerID/current-checkin",
+  rowController.getCurrentCheckin
+);
 
 // get workers
 router.get("/workers", rowController.getWorkers);
