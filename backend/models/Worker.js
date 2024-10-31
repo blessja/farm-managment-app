@@ -12,9 +12,9 @@ const workerSchema = new mongoose.Schema({
           row_number: { type: String },
           stock_count: { type: Number },
           time_spent: { type: Number },
+          job_type: { type: String, required: false },
           date: { type: Date }, // New field to track the date
           day_of_week: { type: String }, // New field to track the day of the week
-          job_type: { type: String },
         },
       ],
     },
