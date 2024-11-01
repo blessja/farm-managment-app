@@ -122,16 +122,24 @@ exports.getAllClockData = async (req, res) => {
   }
 };
 
-// get the earliest clock-in date of the workers
 exports.getEarliestClockInDate = async (req, res) => {
   try {
-    const earliestClockInDate = await WorkerClock.find({})
-      .sort({ clockInTime: 1 })
+    const earliestClockInRecord = await WorkerClock.find({})
+      .sort({ "clockIns.clockInTime": 1 })
       .limit(1)
-      .select("clockInTime");
+      .select("clockIns.clockInTime");
 
-    if (earliestClockInDate.length > 0) {
-      res.json(earliestClockInDate[0].clockInTime);
+    if (earliestClockInRecord.length > 0) {
+      // Extract the earliest clockInTime and format it using moment
+      const earliestClockInTime =
+        earliestClockInRecord[0].clockIns[0].clockInTime;
+      const formattedDate = moment(earliestClockInTime).format(
+        "YYYY-MM-DD HH:mm:ss"
+      );
+
+      res.json({ earliestClockInDate: formattedDate });
+    } else {
+      res.status(404).json({ message: "No clock-in records found" });
     }
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
