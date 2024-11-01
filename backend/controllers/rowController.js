@@ -8,7 +8,7 @@ exports.checkInWorker = async (req, res) => {
   try {
     console.log("Check-in request:", req.body);
 
-    if (!workerID || !workerName || !rowNumber || !blockName || !jobType) {
+    if (!workerID || !workerName || !rowNumber || !blockName) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
