@@ -50,5 +50,6 @@ app.use("/api/workers", workerRoutes);
 app.use("/api/clock", clockRoutes);
 app.use("/api/monitor-clockins", clockRoutes);
 app.use("/api/clocks", clockRoutes);
+app.use("/api/earliest-clock-in", clockRoutes);
 
 module.exports = app;

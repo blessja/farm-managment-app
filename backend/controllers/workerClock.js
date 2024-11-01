@@ -121,3 +121,19 @@ exports.getAllClockData = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+// get the earliest clock-in date of the workers
+exports.getEarliestClockInDate = async (req, res) => {
+  try {
+    const earliestClockInDate = await WorkerClock.find({})
+      .sort({ clockInTime: 1 })
+      .limit(1)
+      .select("clockInTime");
+
+    if (earliestClockInDate.length > 0) {
+      res.json(earliestClockInDate[0].clockInTime);
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
