@@ -23,7 +23,7 @@ jobs:
 
       # Navigate to the backend folder before running npm commands
       - name: Navigate to backend folder
-        run: cd farm-management-app/backend
+        run: cd farm-management-app/./backend
 
       - name: npm install, build, and test
         run: |
