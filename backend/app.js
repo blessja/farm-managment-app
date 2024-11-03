@@ -22,21 +22,31 @@ connectDB();
 app.use(express.json());
 
 const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:4000",
-    "https://farm-managment-app.onrender.com",
-    "http://localhost:8100",
-    "capacitor://localhost",
-    "https://localhost",
-    "ionic://localhost",
-    "http://localhost:5173",
-    "http://localhost:8101",
-    "http://192.168.0.21:8135",
-    "http://192.168.0.103:8101",
-    "capacitor://localhost",
-    "ionic://localhost",
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or CURL requests)
+    if (!origin) return callback(null, true);
+    if (
+      [
+        "http://localhost:3000",
+        "http://localhost:4000",
+        "https://farm-managment-app.onrender.com",
+        "http://localhost:8100",
+        "capacitor://localhost",
+        "https://localhost",
+        "ionic://localhost",
+        "http://localhost:5173",
+        "http://localhost:8101",
+        "http://192.168.0.21:8135",
+        "http://192.168.0.103:8101",
+        "capacitor://localhost",
+        "ionic://localhost",
+      ].indexOf(origin) !== -1
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
 };
