@@ -21,24 +21,23 @@ jobs:
         with:
           node-version: '18.x'
 
-      # Navigate to the backend folder before running npm commands
-      - name: Navigate to backend folder
-        run: cd backend
-
       - name: npm install, build, and test
         run: |
+          cd backend
           npm install
           npm run build --if-present
           npm run test --if-present
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip ./*
+        run: |
+          cd backend
+          zip -r release.zip ./*
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: release.zip
+          path: backend/release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -56,7 +55,7 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: unzip backend/release.zip
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -71,4 +70,4 @@ jobs:
         with:
           app-name: 'farmserver'
           slot-name: 'production'
-          package: .
+          package: backend
