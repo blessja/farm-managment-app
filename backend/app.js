@@ -25,6 +25,7 @@ const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:4000",
+    "https://farm-managment-app.onrender.com",
     "http://localhost:8100",
     "capacitor://localhost",
     "https://localhost",
